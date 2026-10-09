@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+import path from 'node:path';
+const root = path.resolve(import.meta.dirname, '..');
+const dist = path.join(root, 'dist');
+const mime = file => file.endsWith('.woff2') ? 'font/woff2' : file.endsWith('.woff') ? 'font/woff' : file.endsWith('.jpg') ? 'image/jpeg' : 'application/octet-stream';
+const data = file => `data:${mime(file)};base64,${fs.readFileSync(file).toString('base64')}`;
+const files = fs.readdirSync(path.join(dist, 'assets'));
+const cssFile = files.find(f => f.endsWith('.css'));
+const jsFile = files.find(f => f.endsWith('.js'));
+let css = fs.readFileSync(path.join(dist, 'assets', cssFile), 'utf8');
+css = css.replace(/url\((['"]?)([^)'"\s]+)\1\)/g, (match, quote, url) => {
+  if (url.startsWith('data:')) return match;
+  const local = path.join(dist, url.replace(/^\//,''));
+  return fs.existsSync(local) ? `url('${data(local)}')` : match;
+});
+const airport = data(path.join(dist,'assets/airport-dusk.jpg'));
+let js = fs.readFileSync(path.join(dist, 'assets', jsFile), 'utf8').replaceAll('/assets/airport-dusk.jpg',airport).replaceAll('</script','<\\/script');
+const head = fs.readFileSync(path.join(root,'index.html'),'utf8').match(/<head>([\s\S]*?)<\/head>/)[1];
+const render = view => `<!doctype html>\n<html lang="en" data-view="${view}"><head>${head}<style>${css}</style></head><body><div id="root"></div><script type="module">${js}</script></body></html>`;
+fs.writeFileSync(path.join(root,'Relay.html'),render('app'));
+fs.writeFileSync(path.join(root,'Relay-Slides.html'),render('slides'));
+console.log('Created Relay.html and Relay-Slides.html with embedded scripts, styles, fonts and photo.');

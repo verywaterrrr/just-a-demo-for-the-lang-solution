@@ -1,0 +1,13 @@
+node_modules/
+dist/
+_site/
+Relay.html
+Relay-Slides.html
+Relay-Showcase.zip
+checks/*.png
+checks/*.log
+checks/*.json
+.playwright-cli/
+.DS_Store
+.env
+.env.*
